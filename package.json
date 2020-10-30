@@ -1,0 +1,17 @@
+{
+  "name": "y-request",
+  "version": "1.0.0",
+  "description": "modern request method base on axios and asyn/await",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "await-to-js": "^2.1.1",
+    "axios": "^0.21.0",
+    "axios-retry": "^3.1.9"
+  }
+}
