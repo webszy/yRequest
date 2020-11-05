@@ -8,18 +8,18 @@ function isFunction(obj) {
   return obj !== null && typeof obj === 'function'
 }
 function isArray(arr) {
-  return obj !== null && typeof obj === 'object' && arr.length
+  return arr !== null && typeof arr === 'object' && arr.length
 }
 const defaultParam = {
   requestOption: {
-    timeoout:7* 1000
+    timeoout: 7 * 1000
   },
-  interceptors:{},
-  errorHandlers:{},
-  retryOption:{
-    enable:true
+  interceptors: {},
+  errorHandlers: {},
+  retryOption: {
+    enable: true
   },
-  allowMethods:['get','post','put','delete']
+  allowMethods: ['get', 'post', 'put', 'delete']
 }
 /**
  *
@@ -42,13 +42,15 @@ const defaultParam = {
  * }
  */
 class Request {
-  constructor({ requestOption, interceptors, errorHandlers, retryOption,allowMethods } = defaultParam ) {
-    if(isArray(allowMethods)){
+  constructor({ requestOption, interceptors, errorHandlers, retryOption, allowMethods } = defaultParam) {
+    this.to = to
+    this.errorHandlers = errorHandlers
+    if (isArray(allowMethods)) {
       this.allowMethods = allowMethods
     } else {
       this.allowMethods = defaultParam.allowMethods
     }
-    
+
     if (isObject(requestOption)) {
       this.Service = axios.create(requestOption)
     } else {
@@ -79,20 +81,34 @@ class Request {
     return this.output()
   }
   output() {
-    const _get = (url, header, param) => {
-      const p = { method: 'get', url }
-      if (isObject(header)) {
-        p.headers = header
-      }
-      if (isObject(param)) {
-        p.param = param
-      }
-      this.Service(p)
-    }
-    return {
-      _get,
+    const funcList = {
       Service: this.Service
     }
+    for (const method of this.allowMethods) {
+      const fun_body = "function isObject(obj) {" +
+        "return (obj !== null && typeof obj === 'object') || typeof obj === 'undefined'" +
+        "};" +
+        "const str = new URL(url);" +
+        "const path = str.pathname;" +
+        "const p = {method:" + method + "};" +
+        "if(!url || url===''){ throw new Error('must has url') };" +
+        "if(!isObject(header)){ throw new Error('header must be Object') } else { p.headers = header };" +
+        "if(!isObject(param)){ throw new Error('param must be Object') } else { p.param = param };" +
+        "if(isObject(data)&&p.method.toLowerCase()!=='get'){ p.data=data };" +
+        "const [err,res] = this.to(this.Service(p));" +
+        "if (!err && res) {" +
+        " return res" +
+        "} else {" +
+        " console.log(err);" +
+        " if(this.errorHandlers&&this.errorHandlers.has(path)){" +
+        "  const func = this.errorHandlers.get(path);" +
+        "  func(err);" +
+        "} }"
+      console.log('fun_body: ', fun_body);
+      const name = '_' + method
+      funcList[name] = new Function('url', 'header', 'param', 'data', fun_body).bind(this)
+    }
+    return funcList
   }
 }
 
